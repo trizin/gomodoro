@@ -92,7 +92,7 @@ func (m TeaModel) View() string {
 	}
 	state += " - " + strconv.Itoa(m.Manager.Count)
 	// The header
-	s := "\n\n"
+	s := "\n"
 	stpp := ""
 	if !m.Manager.Timer.Running {
 		stpp += "STOPPED "
