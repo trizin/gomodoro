@@ -13,7 +13,7 @@ var textStyle = lipgloss.NewStyle().
 	Foreground(lipgloss.Color("#FAFAFA")).
 	Background(lipgloss.Color("#7D56F4")).
 	Padding(1).
-	Width(32).Align(lipgloss.Center)
+	Width(80).Align(lipgloss.Center)
 
 const (
 	padding  = 2
@@ -27,7 +27,7 @@ type TeaModel struct {
 
 func (m TeaModel) Init() tea.Cmd {
 	// Just return `nil`, which means "no I/O right now, please."
-
+	m.Progress.ShowPercentage = false
 	return m.Manager.Init()
 }
 
@@ -76,15 +76,16 @@ func (m TeaModel) View() string {
 		state = "BREAK"
 	}
 	// The header
-	s := state + "\n\n"
-
+	s := "\n\n"
 	if !m.Manager.Timer.Running {
 		s += "STOPPED\n"
 	}
 
-	s += m.Progress.View() + "\n\n"
+	s += m.Progress.View() + "\n"
 
-	s += textStyle.Render(m.Manager.GetHumanTime())
+	s += textStyle.Render(
+		state + "\n" + m.Manager.GetHumanTime(),
+	)
 	// The footer
 	s += "\nPress q to quit.\n"
 

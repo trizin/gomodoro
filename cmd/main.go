@@ -29,8 +29,9 @@ func main() {
 	p := tea.NewProgram(
 		&model.TeaModel{
 			Manager:  M,
-			Progress: progress.New(progress.WithDefaultGradient()),
+			Progress: progress.New(progress.WithDefaultGradient(), progress.WithoutPercentage()),
 		},
+		tea.WithAltScreen(),
 	)
 	if err := p.Start(); err != nil {
 		fmt.Printf("An error occured while starting the app %v\n", err)
