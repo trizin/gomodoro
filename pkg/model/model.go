@@ -2,22 +2,11 @@ package model
 
 import (
 	"gomodoro/pkg/manager"
+	"gomodoro/pkg/progress"
+	"gomodoro/pkg/styles"
+	"strconv"
 
-	"github.com/charmbracelet/bubbles/progress"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
-)
-
-var textStyle = lipgloss.NewStyle().
-	Bold(true).
-	Foreground(lipgloss.Color("#FAFAFA")).
-	Background(lipgloss.Color("#7D56F4")).
-	Padding(1).
-	Width(80).Align(lipgloss.Center)
-
-const (
-	padding  = 2
-	maxWidth = 80
 )
 
 type TeaModel struct {
@@ -26,25 +15,40 @@ type TeaModel struct {
 }
 
 func (m TeaModel) Init() tea.Cmd {
-	// Just return `nil`, which means "no I/O right now, please."
-	m.Progress.ShowPercentage = false
+	m.updateGradient()
 	return m.Manager.Init()
+}
+
+func (m *TeaModel) updateGradient() {
+	if m.Manager.PomodoroState == manager.Work {
+		m.Progress.SetRamp(
+			styles.WorkGradient[0],
+			styles.WorkGradient[1],
+			false,
+		)
+	} else {
+		m.Progress.SetRamp(
+			styles.BreakGradient[0],
+			styles.BreakGradient[1],
+			false,
+		)
+	}
 }
 
 func (m TeaModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 
 	case tea.WindowSizeMsg:
-		m.Progress.Width = msg.Width - padding*2 - 4
-		if m.Progress.Width > maxWidth {
-			m.Progress.Width = maxWidth
-		}
+		m.Progress.Width = msg.Width
 		return m, nil
 
 	case progress.FrameMsg:
 		progressModel, cmd := m.Progress.Update(msg)
 		m.Progress = progressModel.(progress.Model)
 		return m, cmd
+
+	case manager.StateChange:
+		m.updateGradient()
 
 	case manager.TickMsg:
 		var cmd tea.Cmd
@@ -56,6 +60,10 @@ func (m TeaModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 
 		switch msg.String() {
+
+		case "s":
+			m.Manager.Skip()
+			m.updateGradient()
 
 		case "ctrl+c", "q":
 			return m, tea.Quit
@@ -70,11 +78,14 @@ func (m TeaModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m TeaModel) View() string {
 	state := ""
-	if m.Manager.PomodoroState == 0 {
+	if m.Manager.PomodoroState == manager.Work {
 		state = "WORK"
-	} else {
+	} else if m.Manager.PomodoroState == manager.Break {
 		state = "BREAK"
+	} else {
+		state = "LONG BREAK"
 	}
+	state += " - " + strconv.Itoa(m.Manager.Count)
 	// The header
 	s := "\n\n"
 	if !m.Manager.Timer.Running {
@@ -83,11 +94,15 @@ func (m TeaModel) View() string {
 
 	s += m.Progress.View() + "\n"
 
-	s += textStyle.Render(
+	s += styles.GetTextStyle(int(m.Manager.PomodoroState)).Width(
+		m.Progress.Width,
+	).Render(
 		state + "\n" + m.Manager.GetHumanTime(),
 	)
 	// The footer
-	s += "\nPress q to quit.\n"
+	s += styles.HelpStyle.Width(
+		m.Progress.Width,
+	).Render("q - quit, enter - start/stop, s - skip")
 
 	// Send the UI for rendering
 	return s

@@ -4,13 +4,14 @@ import (
 	"fmt"
 	"gomodoro/pkg/manager"
 	"gomodoro/pkg/model"
+	"gomodoro/pkg/progress"
 	"gomodoro/pkg/timer"
 
-	"github.com/charmbracelet/bubbles/progress"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
 var breakDuration = 5 * 60
+var longBreakDuration = 30 * 60
 var workDuration = 25 * 60
 
 var M manager.Manager
@@ -20,16 +21,21 @@ func main() {
 		BreakDuration: breakDuration,
 		WorkDuration:  workDuration,
 		PomodoroState: manager.Work,
+		Count:         0,
 		Timer: timer.Timer{
 			Running: true,
 			Count:   0,
 		},
+		LongBreakDuration: longBreakDuration,
 	}
 
 	p := tea.NewProgram(
 		&model.TeaModel{
-			Manager:  M,
-			Progress: progress.New(progress.WithDefaultGradient(), progress.WithoutPercentage()),
+			Manager: M,
+			Progress: progress.New(progress.WithGradient(
+				"#7D56F4",
+				"#f02961",
+			), progress.WithoutPercentage()),
 		},
 		tea.WithAltScreen(),
 	)

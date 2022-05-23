@@ -14,16 +14,23 @@ type PomodoroState int
 const (
 	Work PomodoroState = iota
 	Break
+	LongBreak
 )
 
 type Manager struct {
-	Timer         timer.Timer
-	BreakDuration int
-	WorkDuration  int
-	PomodoroState PomodoroState
+	Timer             timer.Timer
+	BreakDuration     int
+	WorkDuration      int
+	LongBreakDuration int
+	PomodoroState     PomodoroState
+	Count             int
 }
 type TickMsg struct {
 	Time int
+}
+
+type StateChange struct {
+	State int
 }
 
 func (m *Manager) GetHumanTime() string {
@@ -45,11 +52,18 @@ func (m *Manager) GetHumanTime() string {
 
 }
 
+func (m *Manager) Skip() {
+	m.Timer.Count = 1e10
+	m.UpdateState()
+}
+
 func (m *Manager) TotalDuration() int {
-	if m.PomodoroState == 0 {
+	if m.PomodoroState == Work {
 		return m.WorkDuration
-	} else {
+	} else if m.PomodoroState == Break {
 		return m.BreakDuration
+	} else {
+		return m.LongBreakDuration
 	}
 }
 
@@ -63,6 +77,12 @@ func (m Manager) tick() tea.Cmd {
 	})
 }
 
+func (m Manager) state() tea.Cmd {
+	return func() tea.Msg {
+		return StateChange{State: int(m.PomodoroState)}
+	}
+}
+
 func (m Manager) UpdateState() (Manager, tea.Cmd) {
 	if m.Timer.Running {
 		m.Timer.Increase()
@@ -71,11 +91,24 @@ func (m Manager) UpdateState() (Manager, tea.Cmd) {
 	if m.Timer.Count >= m.BreakDuration && m.PomodoroState == Break {
 		m.Timer.Reset()
 		m.PomodoroState = Work
+		return m, tea.Batch(m.tick(), m.state())
+	}
+
+	if m.Timer.Count >= m.LongBreakDuration && m.PomodoroState == LongBreak {
+		m.Timer.Reset()
+		m.PomodoroState = Work
+		return m, tea.Batch(m.tick(), m.state())
 	}
 
 	if m.Timer.Count >= m.WorkDuration && m.PomodoroState == Work {
+		m.Count++
 		m.Timer.Reset()
-		m.PomodoroState = Break
+		if m.Count%4 == 0 && m.Count > 0 {
+			m.PomodoroState = LongBreak
+		} else {
+			m.PomodoroState = Break
+		}
+		return m, tea.Batch(m.tick(), m.state())
 	}
 
 	return m, m.tick()
