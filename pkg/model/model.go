@@ -93,16 +93,19 @@ func (m TeaModel) View() string {
 	state += " - " + strconv.Itoa(m.Manager.Count)
 	// The header
 	s := "\n\n"
+	stpp := ""
 	if !m.Manager.Timer.Running {
-		s += "STOPPED\n"
+		stpp += "STOPPED "
 	}
 
 	s += m.Progress.View() + "\n"
 
-	s += styles.GetTextStyle(int(m.Manager.PomodoroState)).Width(
+	s += styles.GetTextStyle(int(m.Manager.PomodoroState),
+		m.Manager.Timer.Running,
+	).Width(
 		m.Progress.Width,
 	).Render(
-		state + "\n" + m.Manager.GetHumanTime(),
+		stpp + state + "\n" + m.Manager.GetHumanTime(),
 	)
 	// The footer
 	s += styles.HelpStyle.Width(

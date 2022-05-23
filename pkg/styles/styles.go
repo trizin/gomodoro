@@ -4,11 +4,12 @@ import "github.com/charmbracelet/lipgloss"
 
 var workColor = "#7D56F4"
 var breakColor = "#f02961"
+var stoppedColor = "#808080"
 
 var WorkGradient = [2]string{"#7D56F4", "#6638f2"}
 var BreakGradient = [2]string{"#f02961", "#ed0748"}
 
-func GetTextStyle(pomodoroState int) lipgloss.Style {
+func GetTextStyle(pomodoroState int, running bool) lipgloss.Style {
 	textStyle := lipgloss.NewStyle().
 		Bold(true).
 		Foreground(lipgloss.Color("#FAFAFA")).
@@ -19,6 +20,10 @@ func GetTextStyle(pomodoroState int) lipgloss.Style {
 		textStyle.Background(lipgloss.Color(workColor))
 	} else {
 		textStyle.Background(lipgloss.Color(breakColor))
+	}
+
+	if !running {
+		textStyle.Background(lipgloss.Color(stoppedColor))
 	}
 
 	return textStyle
