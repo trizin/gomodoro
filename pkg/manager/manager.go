@@ -68,7 +68,7 @@ func (m *Manager) TotalDuration() int {
 }
 
 func (m Manager) Init() tea.Cmd {
-	return m.tick()
+	return tea.Batch(m.tick(), m.state())
 }
 
 func (m Manager) tick() tea.Cmd {
