@@ -20,6 +20,7 @@ func (m TeaModel) Init() tea.Cmd {
 }
 
 func (m *TeaModel) updateGradient() {
+	m.Progress.SetPercent(0)
 	if m.Manager.PomodoroState == manager.Work {
 		m.Progress.SetRamp(
 			styles.WorkGradient[0],
@@ -53,7 +54,11 @@ func (m TeaModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case manager.TickMsg:
 		var cmd tea.Cmd
 		m.Manager, cmd = m.Manager.UpdateState()
-		snd := m.Progress.IncrPercent(1 / float64(m.Manager.TotalDuration()))
+		incr := 0.0
+		if m.Manager.Timer.Running {
+			incr = 1 / float64(m.Manager.TotalDuration())
+		}
+		snd := m.Progress.SetPercent(incr * float64(m.Manager.Timer.Count))
 
 		return m, tea.Batch(snd, cmd)
 
